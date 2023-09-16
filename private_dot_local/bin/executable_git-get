@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+import sys
+
+import subprocess
+from urllib.parse import urlparse
+
+parser = argparse.ArgumentParser(description='Clone git repos into "$GITGET_BASE_PATH/<hostname>/<project|user>/<repo>/<worktree>"')
+parser.add_argument('url', type=str, help='git repo url')
+parser.add_argument('worktree', nargs='?', type=str, help='git worktree')
+args = parser.parse_args()
+
+base_path = os.getenv('GITGET_BASE_PATH', os.path.join(os.getenv('HOME'), 'git'))
+prefix = os.getenv('GITGET_DEFAULT_PREFIX', 'git@github.com:')
+default_worktree = os.getenv('GITGET_DEFAULT_WORKTREE', 'main')
+url = args.url
+
+worktree = default_worktree
+if args.worktree:
+    worktree = args.worktree
+
+def inf(msg):
+    print('INF: ' + msg, file=sys.stdout)
+def err(msg):
+    print('ERR: ' + msg, file=sys.stdout)
+def fail(msg):
+    print('FAT: ' + msg, file=sys.stdout)
+    sys.exit(1)
+
+# sanity checks
+if not os.path.exists(base_path):
+    fail(f'{base_path} does not exist!')
+if not os.path.isdir(base_path):
+    fail(f'{base_path} is not a directory!')
+
+# build url in case we were given a shorthand
+if not url.endswith('.git'):
+    url = url + '.git'
+if not url.startswith('git@') and not url.startswith('https://'):
+    url = prefix + url
+
+try:
+    tmp_url = url
+    if url.startswith('git@'):
+        tmp_url = url.replace(':', '/').replace('git@', 'https://')
+    parsed_url = urlparse(tmp_url)
+    suffix = os.path.splitext(parsed_url.path)[0].strip('/')
+    path = os.path.join(base_path, parsed_url.hostname, suffix, worktree)
+except Exception as e:
+    err(f'could not parse "{tmp_url}" (from "{args.url}")')
+    raise e
+
+# sanity checks
+if os.path.exists(path):
+    inf(f'{args.url} already exists')
+    print(path)
+    sys.exit(0)
+
+repo_path = os.path.dirname(path)
+created_repo_path = False
+if not os.path.exists(repo_path):
+    os.makedirs(repo_path)
+    created_repo_path = True
+
+if created_repo_path:
+    try:
+        subprocess.check_call(['git', 'clone', url, path])
+        print(path)
+    except subprocess.CalledProcessError as e:
+        os.rmdir(repo_path)
+        err('could not clone {args.url}')
+        raise e
+else:
+    main_worktree_path = os.path.join(repo_path, default_worktree)
+    try:
+        subprocess.check_call(['git', '-C', main_worktree_path, 'worktree', 'add', path, '-b', worktree])
+        print(path)
+    except subprocess.CalledProcessError as e:
+        err('could not create worktree {path}')
+        raise e
