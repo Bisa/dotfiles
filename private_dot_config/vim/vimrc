@@ -19,6 +19,14 @@ if !has('nvim') " Neovim has its own special location
   set viminfofile=$XDG_STATE_HOME/vim/viminfo
 endif
 
+set nu rnu
+augroup numtoggle
+  autocmd!
+  autocmd BufEnter,FocusGained,InsertLeave,WinEnter * if mode() != "i" | set nu rnu     | endif
+  autocmd InsertEnter                               *                  | set nonu nornu
+  autocmd BufLeave,FocusLost,WinLeave               *                  | set nu nornu
+augroup END
+
 " Fix home/end key in all modes
 map <esc>OH <home>
 cmap <esc>OH <home>
