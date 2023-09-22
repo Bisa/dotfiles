@@ -2,6 +2,8 @@
 # If not running interactively, don't do anything
 tty -s || return
 
+export PATH="${PATH}:${HOME}/.local/bin"
+
 # XDG
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_CACHE_HOME="$HOME/.cache"
@@ -11,6 +13,36 @@ export XDG_RUNTIME_DIR="/run/user/$UID"
 export BASH_COMPLETION_USER_FILE="$XDG_CONFIG_HOME/bash-completion/bash_completion"
 export HISTFILE="$XDG_STATE_HOME/bash/history"
 export VIMINIT="set nocp | source ${XDG_CONFIG_HOME:-$HOME/.config}/vim/vimrc"
+export PYTHONHISTFILE="$XDG_STATE_HOME/.python_history"
+export PYTHONPYCACHEPREFIX="$XDG_CACHE_HOME/python"
+export PYTHONUSERBASE="$XDG_DATA_HOME/python"
+
+# colors/formatting
+export reset=$(tput sgr0)
+export bold=$(tput bold)
+export black=$(tput setaf 0)
+export red=$(tput setaf 1)
+export green=$(tput setaf 2)
+export yellow=$(tput setaf 3)
+export blue=$(tput setaf 4)
+export magenta=$(tput setaf 5)
+export cyan=$(tput setaf 6)
+export white=$(tput setaf 7)
+
+export REQUESTS_CA_BUNDLE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+
+export GIT_PS1_SHOWDIRTYSTATE=1
+export GIT_PS1_SHOWSTASHSTATE=1
+export GIT_PS1_SHOWUNTRACKEDFILES=1
+export GIT_PS1_SHOWUPSTREAM=verbose
+export GIT_PS1_SHOWCONFLICTSTATE=yes
+export GIT_PS1_DESCRIBE_STYLE=branch
+export GIT_PS1_SHOWCOLORHINTS=1
+
+sources="/usr/share/bash-completion/bash_completion /etc/bash_completion.d/git /usr/share/git-core/contrib/completion/git-prompt.sh"
+for f in $sources; do
+  [ -e $f ] && source $f
+done
 
 # append to the history file, don't overwrite it
 shopt -s histappend
@@ -28,14 +60,14 @@ shopt -s checkwinsize
 
 # enable color support of ls and also add handy aliases
 if [ -x /usr/bin/dircolors ]; then
-    test -r ~/.dircolors && eval "$(dircolors -b $XDG_CONFIG_HOME/.dircolors)" || eval "$(dircolors -b)"
-    alias ls='ls --color=auto'
-    #alias dir='dir --color=auto'
-    #alias vdir='vdir --color=auto'
+	test -r ~/.dircolors && eval "$(dircolors -b $XDG_CONFIG_HOME/.dircolors)" || eval "$(dircolors -b)"
+	alias ls='ls --color=auto'
+	#alias dir='dir --color=auto'
+	#alias vdir='vdir --color=auto'
 
-    alias grep='grep --color=auto'
-    alias fgrep='fgrep --color=auto'
-    alias egrep='egrep --color=auto'
+	alias grep='grep --color=auto'
+	alias fgrep='fgrep --color=auto'
+	alias egrep='egrep --color=auto'
 fi
 
 alias ll='ls -valsh'
@@ -43,11 +75,10 @@ alias la='ls -A'
 alias l='ls -CF'
 
 alias ch='chezmoi'
-source <(chezmoi completion bash)
-complete -o default -F __start_chezmoi ch
-
 alias sbr='clear; exec /bin/bash'
 alias vbr='vim $HOME/.bashrc && sbr'
+alias less='less -#5 -S'
+alias vim='vim -p'
 
 # Alias definitions.
 if [ -f ~/.bash_aliases ]; then
@@ -58,59 +89,21 @@ fi
 # this, if it's already enabled in /etc/bash.bashrc and /etc/profile
 # sources /etc/bash.bashrc).
 if ! shopt -oq posix; then
-  if [ -f /usr/share/bash-completion/bash_completion ]; then
-    . /usr/share/bash-completion/bash_completion
-  elif [ -f /etc/bash_completion ]; then
-    . /etc/bash_completion
-  fi
+	if [ -f /usr/share/bash-completion/bash_completion ]; then
+		. /usr/share/bash-completion/bash_completion
+	elif [ -f /etc/bash_completion ]; then
+		. /etc/bash_completion
+	fi
 fi
+
+source <(op completion bash)
+source <(chezmoi completion bash)
+complete -o default -F __start_chezmoi ch
 
 # yubikey
 export GPG_TTY="$(tty)"
 export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
 gpgconf --launch gpg-agent
-
-function sail() {
-  local sailbin=
-  if [ -x "$PWD/sail" ]; then
-    sailbin="$PWD/sail"
-  elif [ -x "$PWD/vendor/bin/sail" ]; then
-    sailbin="$PWD/vendor/bin/sail"
-  else
-    local gitpath=$(git rev-parse --show-toplevel 2> /dev/null)
-    if [ -x "$gitpath/vendor/bin/sail" ]; then
-      sailbin="$gitpath/vendor/bin/sail"
-    fi
-  fi
-  [ -z "$sailbin" ] && { >&2 echo "${red}Could not find sail!${reset}"; return 1; }
-  "$sailbin" $@ 
-}
-
-export GIT_PS1_SHOWDIRTYSTATE=1
-export GIT_PS1_SHOWSTASHSTATE=1
-export GIT_PS1_SHOWUNTRACKEDFILES=1
-export GIT_PS1_SHOWUPSTREAM=verbose
-export GIT_PS1_SHOWCONFLICTSTATE=yes
-export GIT_PS1_DESCRIBE_STYLE=branch
-export GIT_PS1_SHOWCOLORHINTS=1
-
-#
-# general settings
-#
-
-export REQUESTS_CA_BUNDLE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
-
-# colors/formatting
-export reset=$(tput sgr0)
-export bold=$(tput bold)
-export black=$(tput setaf 0)
-export red=$(tput setaf 1)
-export green=$(tput setaf 2)
-export yellow=$(tput setaf 3)
-export blue=$(tput setaf 4)
-export magenta=$(tput setaf 5)
-export cyan=$(tput setaf 6)
-export white=$(tput setaf 7)
 
 # encrypt sensitive vars
 export CRYPTENV="$XDG_CONFIG_HOME/.cryptenv"
@@ -132,47 +125,40 @@ function cryptedit() {
 	fi
 }
 
-#
-# helpers/alias
-#
-
-alias less='less -#5 -S'
-alias vim='vim -p'
-
 # History cleaning
 function histdelseq() {
-  for h in $(seq $1 $2); do
-    history -d $1
-  done
-  history -d $(history 1 |awk '{print $1}')
+	for h in $(seq $1 $2); do
+		history -d $1
+	done
+	history -d $(history 1 |awk '{print $1}')
 }
 function histdel() {
-  offset=${1:-1}
-  n=$(history 1 |awk '{print $1}')
-  histdelseq $(( $n - $offset )) $(( $n - 1 ))
+	offset=${1:-1}
+	n=$(history 1 |awk '{print $1}')
+	histdelseq $(( $n - $offset )) $(( $n - 1 ))
 }
 
 # TMUX Session switcher
 function tm(){
-  [ -z "$1" ] && { tmux list-sessions; return; }
-  local tmsess=$1; shift
+	[ -z "$1" ] && { tmux list-sessions; return; }
+	local tmsess=$1; shift
 
 	[ -n "$TMUX" ] && { tmux detach; return; }
-  if tmux list-sessions 2>&1| grep -P "^$tmsess" 2>&1 > /dev/null; then
-    tmux attach -t "$tmsess"
-  else
-    tmux new -s "$tmsess"
-  fi
+	if tmux list-sessions 2>&1| grep -P "^$tmsess" 2>&1 > /dev/null; then
+		tmux attach -t "$tmsess"
+	else
+		tmux new -s "$tmsess"
+	fi
 }
 function __tm_ls(){
-  tmux list-sessions |awk -F':' '{ print $1 }'
+	tmux list-sessions |awk -F':' '{ print $1 }'
 }
 function __tm_comp(){
-  if [ "${#COMP_WORDS[@]}" != "2" ]; then
-    return
-  fi
-  sessions="$(__tm_ls)"
-  COMPREPLY=($(compgen -W "${sessions}" "${COMP_WORDS[1]}"))
+	if [ "${#COMP_WORDS[@]}" != "2" ]; then
+		return
+	fi
+	sessions="$(__tm_ls)"
+	COMPREPLY=($(compgen -W "${sessions}" "${COMP_WORDS[1]}"))
 }
 complete -F __tm_comp tm
 
@@ -197,22 +183,13 @@ function __cdgit_ls(){
 	done
 }
 function __cdgit_comp(){
-  if [ "${#COMP_WORDS[@]}" != "2" ]; then
-    return
-  fi
-  local repos="$(__cdgit_ls)"
-  COMPREPLY=($(compgen -W "${repos}" "${COMP_WORDS[1]}"))
+	if [ "${#COMP_WORDS[@]}" != "2" ]; then
+		return
+	fi
+	local repos="$(__cdgit_ls)"
+	COMPREPLY=($(compgen -W "${repos}" "${COMP_WORDS[1]}"))
 }
 complete -F __cdgit_comp cdgit
-
-#
-#	sourcing
-#
-
-sources="/usr/share/bash-completion/bash_completion /etc/bash_completion.d/git /usr/share/git-core/contrib/completion/git-prompt.sh"
-for f in $sources; do
-  [ -e $f ] && source $f
-done
 
 #
 # prompt
