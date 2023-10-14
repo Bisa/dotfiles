@@ -2,7 +2,7 @@
 # If not running interactively, don't do anything
 tty -s || return
 
-export PATH="${PATH}:${HOME}/.local/bin"
+export PATH="${PATH}:${HOME}/.local/bin:$HOME/.yarn/bin"
 
 # XDG
 export XDG_CONFIG_HOME="$HOME/.config"
@@ -12,7 +12,7 @@ export XDG_STATE_HOME="$HOME/.local/state"
 export XDG_RUNTIME_DIR="/run/user/$UID"
 export BASH_COMPLETION_USER_FILE="$XDG_CONFIG_HOME/bash-completion/bash_completion"
 export HISTFILE="$XDG_STATE_HOME/bash/history"
-export VIMINIT="set nocp | source ${XDG_CONFIG_HOME:-$HOME/.config}/vim/vimrc"
+#export VIMINIT="set nocp | source ${XDG_CONFIG_HOME:-$HOME/.config}/vim/vimrc"
 export PYTHONHISTFILE="$XDG_STATE_HOME/.python_history"
 export PYTHONPYCACHEPREFIX="$XDG_CACHE_HOME/python"
 export PYTHONUSERBASE="$XDG_DATA_HOME/python"
