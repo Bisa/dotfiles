@@ -29,7 +29,7 @@ export magenta=$(tput setaf 5)
 export cyan=$(tput setaf 6)
 export white=$(tput setaf 7)
 
-export REQUESTS_CA_BUNDLE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+#export REQUESTS_CA_BUNDLE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
 
 export GIT_PS1_SHOWDIRTYSTATE=1
 export GIT_PS1_SHOWSTASHSTATE=1
@@ -191,6 +191,25 @@ function __cdgit_comp(){
 }
 complete -F __cdgit_comp cdgit
 
+function artisan() {
+	local projdir=$(git rev-parse --show-toplevel 2> /dev/null)
+	if [ -z "$projdir" ]; then
+		>&2 echo "${red}ERROR:${reset} refusing to run artisan outside a git directory"
+		return 1
+	fi
+
+	local artisan=$(find "$projdir" -name artisan |head -n1)
+	if ! [ -x "$artisan" ]; then
+		>&2 echo "${red}ERROR:${reset} $artisan is not executable"
+		return 1
+	fi
+
+	if ! complete |grep -q '_sf_artisan artisan'; then
+		source <("$artisan" completion)
+	fi
+	"$artisan" $@
+}
+
 #
 # prompt
 #
@@ -226,3 +245,9 @@ PS1='\[$yellow\][`iret=$?; if [ $iret -eq 0 ]; then echo -n $green; else echo -n
 
 # clear duplicate PATH
 export PATH=$(echo "$PATH"|tr ':' '\n' |uniq |tr '\n' ':' |rev | sed 's/://' |rev)
+
+# NVM
+# TODO: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+export NVM_DIR="$HOME/.config/nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
