@@ -96,7 +96,6 @@ if ! shopt -oq posix; then
 	fi
 fi
 
-source <(op completion bash)
 source <(chezmoi completion bash)
 complete -o default -F __start_chezmoi ch
 
@@ -104,6 +103,7 @@ complete -o default -F __start_chezmoi ch
 export GPG_TTY="$(tty)"
 export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
 gpgconf --launch gpg-agent
+gpg-connect-agent updatestartuptty /bye
 
 # encrypt sensitive vars
 export CRYPTENV="$XDG_CONFIG_HOME/.cryptenv"
