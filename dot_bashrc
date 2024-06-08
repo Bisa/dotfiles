@@ -107,7 +107,11 @@ gpg-connect-agent updatestartuptty /bye
 
 # encrypt sensitive vars
 export CRYPTENV="$XDG_CONFIG_HOME/.cryptenv"
-source <(cat "$CRYPTENV" |gpg --decrypt)
+
+function cryptsrc() {
+	[ -f "$CRYPTENV" ] && source <(cat "$CRYPTENV" |gpg --decrypt)
+}
+
 function cryptedit() {
 	local tmp="$(mktemp -p "/var/run/user/$(id -u)")"
 	if cat "$CRYPTENV" |gpg --decrypt > "$tmp"; then
