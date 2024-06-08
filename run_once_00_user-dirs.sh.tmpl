@@ -1,0 +1,9 @@
+#!/bin/bash
+source {{ .chezmoi.sourceDir | quote }}/private_dot_config/private_user-dirs.dirs
+
+for d in DESKTOP DOWNLOAD TEMPLATES PUBLICSHARE DOCUMENTS MUSIC PICTURES VIDEOS; do
+	v="XDG_${d}_DIR"
+	[ -v ${v} ] || continue
+	[ -d "${!v}" ] && continue
+	echo "mkdir -p \"${!v}\""
+done
