@@ -1,4 +1,6 @@
 {{- $email := promptStringOnce . "email" "Email address" -}}
+{{- $gpgkey := promptStringOnce . "gpgkey" "GPG Key ID" -}}
 
 [data]
     email = {{ $email | quote }}
+    gpgkey = {{ $gpgkey | quote }}
