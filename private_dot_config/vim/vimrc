@@ -1,0 +1,66 @@
+" XDG support
+if empty($MYVIMRC) | let $MYVIMRC = expand('<sfile>:p') | endif
+if empty($XDG_CACHE_HOME)  | let $XDG_CACHE_HOME  = $HOME."/.cache"       | endif
+if empty($XDG_CONFIG_HOME) | let $XDG_CONFIG_HOME = $HOME."/.config"      | endif
+if empty($XDG_DATA_HOME)   | let $XDG_DATA_HOME   = $HOME."/.local/share" | endif
+if empty($XDG_STATE_HOME)  | let $XDG_STATE_HOME  = $HOME."/.local/state" | endif
+set runtimepath^=$XDG_CONFIG_HOME/vim
+set runtimepath+=$XDG_DATA_HOME/vim
+set runtimepath+=$XDG_CONFIG_HOME/vim/after
+set packpath^=$XDG_DATA_HOME/vim,$XDG_CONFIG_HOME/vim
+set packpath+=$XDG_CONFIG_HOME/vim/after,$XDG_DATA_HOME/vim/after
+let g:netrw_home = $XDG_DATA_HOME."/vim"
+call mkdir($XDG_DATA_HOME."/vim/spell", 'p', 0700)
+set backupdir=$XDG_STATE_HOME/vim/backup | call mkdir(&backupdir, 'p', 0700)
+set directory=$XDG_STATE_HOME/vim/swap   | call mkdir(&directory, 'p', 0700)
+set undodir=$XDG_STATE_HOME/vim/undo     | call mkdir(&undodir,   'p', 0700)
+set viewdir=$XDG_STATE_HOME/vim/view     | call mkdir(&viewdir,   'p', 0700)
+if !has('nvim') " Neovim has its own special location
+  set viminfofile=$XDG_STATE_HOME/vim/viminfo
+endif
+
+set nu rnu
+augroup numtoggle
+  autocmd!
+  autocmd BufEnter,FocusGained,InsertLeave,WinEnter * if mode() != "i" | set nu rnu     | endif
+  autocmd InsertEnter                               *                  | set nonu nornu
+  autocmd BufLeave,FocusLost,WinLeave               *                  | set nu nornu
+augroup END
+
+" Fix home/end key in all modes
+map <esc>OH <home>
+cmap <esc>OH <home>
+imap <esc>OH <home>
+map <esc>OF <end>
+cmap <esc>OF <end>
+imap <esc>OF <end>
+
+" default tab/indenting
+set tabstop=2       " The width of a TAB is set to 2,
+                    " its still a \t. Vim shows it with
+                    " a width of 2 characters.
+set shiftwidth=2    " Indents will have a width of 2
+set softtabstop=2   " Sets the number of columns for a TAB
+set expandtab       " Expand TABs to spaces
+
+syntax on
+filetype plugin indent on
+"Get the 2-space YAML as the default when hit carriage return after the colon
+autocmd FileType yaml setlocal ts=2 sts=2 sw=2 expandtab
+autocmd FileType sh setlocal ts=2 sts=2 sw=2 noexpandtab
+
+"" pane splitting
+"key bindings
+nnoremap <C-J> <C-W><C-J>
+nnoremap <C-K> <C-W><C-K>
+nnoremap <C-L> <C-W><C-L>
+nnoremap <C-H> <C-W><C-H>
+"resize
+set splitbelow
+set splitright
+
+" record quick macro with qq - replay with spacebar
+noremap <Space> @q
+
+set paste
+set background=light
